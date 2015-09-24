@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:id="@+id/fragmentList"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent">
+<ListView android:id="@android:id/list"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+</ListView>
+
+    <ImageButton android:id="@android:id/empty"
+        android:layout_width="126dp"
+        android:layout_height="112dp"
+        android:src="@drawable/ic_menu_btn_add"
+        android:layout_gravity="center"/>
+
+</FrameLayout>
