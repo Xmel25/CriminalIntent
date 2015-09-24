@@ -8,7 +8,6 @@ import java.util.UUID;
 
 
 public class Crime {
-    private int i;
     private UUID mId;
     private String mTitle;
     private Date mDate;
