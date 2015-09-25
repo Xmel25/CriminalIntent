@@ -28,7 +28,7 @@ public class CrimeLab {
         try {
             mCrimes = mSerializer.loadCrimes();
         } catch (Exception e) {
-            mCrimes = new ArrayList<Crime>();
+            mCrimes = new ArrayList<>();
         }
     }
 
@@ -71,6 +71,10 @@ public class CrimeLab {
             return false;
         }
 
+    }
+
+    public void deleteCrime(Crime c) {
+        mCrimes.remove(c);
     }
 
 

@@ -8,7 +8,6 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.util.Size;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -27,7 +26,7 @@ import java.util.UUID;
 public class CrimeCameraFragment extends Fragment {
     private static final String TAG = "CrimeCameraFragment";
 
-    public static final String EXTRA_PHOTO_FILENAME = "com.xmel.android.criminalintent.photo_filename";
+    public static final String EXTRA_PHOTO_FILENAME = "com.xmel.criminalintent.photo_filename";
 
     private Camera mCamera;
     private SurfaceView mSurfaceView;
@@ -150,7 +149,8 @@ public class CrimeCameraFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        mCamera = Camera.open();
+
+        mCamera = Camera.open(0);
     }
 
     @Override
