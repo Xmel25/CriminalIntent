@@ -7,7 +7,9 @@ import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -40,6 +42,9 @@ public class CrimeFragment extends Fragment {
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_TIME = 1;
     private static final int REQUEST_PHOTO = 2;
+
+    private Uri fileUri;
+    private String fileName;
 
 
     private Crime mCrime;
@@ -135,7 +140,16 @@ public class CrimeFragment extends Fragment {
         mPhotoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(getActivity(), CrimeCameraActivity.class);
+//                Intent i = new Intent(getActivity(), CrimeCameraActivity.class);
+//                startActivityForResult(i, REQUEST_PHOTO);
+
+                Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                fileName = UUID.randomUUID().toString() + ".jpg";
+                Log.i(TAG, "filename: " + fileName);
+                fileUri = Uri.fromFile(new File(fileName));
+                Log.i(TAG, "fileUri: " + fileUri.getPath());
+
+                i.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
                 startActivityForResult(i, REQUEST_PHOTO);
             }
         });
@@ -148,7 +162,7 @@ public class CrimeFragment extends Fragment {
         mPhotoView = (ImageView) v.findViewById(R.id.crime_imageView);
         registerForContextMenu(mPhotoView);
 
-        Button reportButton = (Button)v.findViewById(R.id.crime_reportButton);
+        Button reportButton = (Button) v.findViewById(R.id.crime_reportButton);
         reportButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -175,8 +189,19 @@ public class CrimeFragment extends Fragment {
             mCrime.setDate(date);
             updateDate();
         } else if (requestCode == REQUEST_PHOTO) {
+            //deletePhoto();
+//            String fileName = data.getStringExtra(CrimeCameraFragment.EXTRA_PHOTO_FILENAME);
+//            if (fileName != null) {
+//                Log.i(TAG, "filename: " + fileName);
+//
+//                Photo p = new Photo(fileName);
+//                mCrime.setPhoto(p);
+//                showPhoto();
+//
+//            }
             deletePhoto();
-            String fileName = data.getStringExtra(CrimeCameraFragment.EXTRA_PHOTO_FILENAME);
+//            String fileName = data.getStringExtra(CrimeCameraFragment.EXTRA_PHOTO_FILENAME);
+            //fileName = fileUri.getPath();
             if (fileName != null) {
                 Log.i(TAG, "filename: " + fileName);
 
@@ -185,6 +210,8 @@ public class CrimeFragment extends Fragment {
                 showPhoto();
 
             }
+
+
         }
 
     }
