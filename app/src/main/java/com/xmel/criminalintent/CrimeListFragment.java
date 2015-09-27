@@ -1,6 +1,8 @@
 package com.xmel.criminalintent;
 
+import android.app.Activity;
 import android.app.ListFragment;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,12 +26,29 @@ import java.util.ArrayList;
 
 
 public class CrimeListFragment extends ListFragment {
+    private static final String TAG = "CrimeListFragment";
 
     private ImageButton mNewCrimeButton;
 
-    private static final String TAG = "CrimeListFragment";
-
     private ArrayList<Crime> mCrimes;
+
+    private Callbacks mCallbacks;
+
+    public interface Callbacks {
+        void onCrimeSelected(Crime crime);
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        mCallbacks = (Callbacks)activity;
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -67,41 +86,17 @@ public class CrimeListFragment extends ListFragment {
 
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        Crime c = ((CrimeAdapter) getListAdapter()).getItem(position);
-        Log.d(TAG, c.getTitle() + " was clicked");
+        Crime crime = ((CrimeAdapter) getListAdapter()).getItem(position);
+        Log.d(TAG, crime.getTitle() + " was clicked");
 
 //        Intent i = new Intent(getActivity(), CrimePagerActivity.class);
-        Intent i = new Intent(getActivity(), CrimeActivity.class);
-        i.putExtra(CrimeFragment.EXTRA_CRIME_ID, c.getId());
-        startActivity(i);
+//        Intent i = new Intent(getActivity(), CrimeActivity.class);
+//        i.putExtra(CrimeFragment.EXTRA_CRIME_ID, c.getId());
+//        startActivity(i);
+        mCallbacks.onCrimeSelected(crime);
 
     }
 
-    private class CrimeAdapter extends ArrayAdapter<Crime> {
-        public CrimeAdapter(ArrayList<Crime> crimes) {
-            super(getActivity(), 0, crimes);
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = getActivity().getLayoutInflater()
-                        .inflate(R.layout.list_item_crime, null);
-            }
-
-            Crime c = getItem(position);
-
-            TextView titleTextView = (TextView) convertView.findViewById(R.id.crime_list_item_titleTextView);
-            titleTextView.setText(c.getTitle());
-            TextView dateTextView = (TextView) convertView.findViewById(R.id.crime_list_item_dateTextView);
-            DateFormat format = new SimpleDateFormat("E d-MMM-yy HH:mm:ss");
-            dateTextView.setText(format.format(c.getDate()));
-            CheckBox solvedCheckBox = (CheckBox) convertView.findViewById(R.id.crime_list_item_solvedCheckBox);
-            solvedCheckBox.setChecked(c.isSolved());
-
-            return convertView;
-        }
-    }
 
     @Override
     public void onResume() {
@@ -122,9 +117,11 @@ public class CrimeListFragment extends ListFragment {
             case R.id.menu_item_new_crime:
                 Crime crime = new Crime();
                 CrimeLab.get(getActivity()).addCrime(crime);
-                Intent i = new Intent(getActivity(), CrimeActivity.class);
-                i.putExtra(CrimeFragment.EXTRA_CRIME_ID, crime.getId());
-                startActivityForResult(i, 0);
+//                Intent i = new Intent(getActivity(), CrimeActivity.class);
+//                i.putExtra(CrimeFragment.EXTRA_CRIME_ID, crime.getId());
+//                startActivityForResult(i, 0);
+                ((CrimeAdapter)getListAdapter()).notifyDataSetChanged();
+                mCallbacks.onCrimeSelected(crime);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -152,5 +149,31 @@ public class CrimeListFragment extends ListFragment {
         }
 
         return super.onContextItemSelected(item);
+    }
+
+    private class CrimeAdapter extends ArrayAdapter<Crime> {
+        public CrimeAdapter(ArrayList<Crime> crimes) {
+            super(getActivity(), 0, crimes);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                convertView = getActivity().getLayoutInflater()
+                        .inflate(R.layout.list_item_crime, null);
+            }
+
+            Crime c = getItem(position);
+
+            TextView titleTextView = (TextView) convertView.findViewById(R.id.crime_list_item_titleTextView);
+            titleTextView.setText(c.getTitle());
+            TextView dateTextView = (TextView) convertView.findViewById(R.id.crime_list_item_dateTextView);
+            DateFormat format = new SimpleDateFormat("E d-MMM-yy HH:mm:ss");
+            dateTextView.setText(format.format(c.getDate()));
+            CheckBox solvedCheckBox = (CheckBox) convertView.findViewById(R.id.crime_list_item_solvedCheckBox);
+            solvedCheckBox.setChecked(c.isSolved());
+
+            return convertView;
+        }
     }
 }

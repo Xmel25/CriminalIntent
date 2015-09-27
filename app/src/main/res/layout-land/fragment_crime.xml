@@ -106,6 +106,12 @@
                 android:layout_marginRight="16dp"
                 android:text="@string/crime_suspect_text" />
 
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/crime_callButton"
+                android:src="@android:drawable/ic_menu_call"/>
+
             <Button
                 android:id="@+id/crime_reportButton"
                 android:layout_width="wrap_content"

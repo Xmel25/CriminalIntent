@@ -12,4 +12,5 @@ public class CrimeActivity extends SingleFragmentActivity {
             .getSerializableExtra(CrimeFragment.EXTRA_CRIME_ID);
         return CrimeFragment.newInstance(crimeId);
     }
+
 }

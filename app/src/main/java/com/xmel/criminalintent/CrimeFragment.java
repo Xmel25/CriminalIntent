@@ -6,9 +6,13 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.BaseColumns;
+import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.text.Editable;
@@ -35,16 +39,20 @@ import java.util.UUID;
 
 public class CrimeFragment extends Fragment {
     public static final String TAG = "CrimeFragment";
+    public static final String IMAGE_DIRECTORY_NAME = "CriminalIntent";
+
 
     public static final String EXTRA_CRIME_ID = "com.xmel.android.criminalintent.crime_id";
     private static final String DIALOG_DATE = "date";
     private static final String DIALOG_TIME = "time";
+    private static final String DIALOG_IMAGE = "image";
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_TIME = 1;
     private static final int REQUEST_PHOTO = 2;
+    private static final int REQUEST_CONTACT = 3;
+    private static final int REQUEST_CALL = 4;
 
     private Uri fileUri;
-    private String fileName;
 
 
     private Crime mCrime;
@@ -55,10 +63,14 @@ public class CrimeFragment extends Fragment {
     private CheckBox mSolvedCheckBox;
     private ImageButton mPhotoButton;
     private ImageView mPhotoView;
+    private Button mSuspectButton;
+    private ImageButton mSuspectCall;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRetainInstance(true);
+
 //        UUID crimeId = (UUID)getActivity().getIntent()
 //                .getSerializableExtra(EXTRA_CRIME_ID);
         UUID crimeId = (UUID) getArguments().getSerializable(EXTRA_CRIME_ID);
@@ -144,11 +156,7 @@ public class CrimeFragment extends Fragment {
 //                startActivityForResult(i, REQUEST_PHOTO);
 
                 Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                fileName = UUID.randomUUID().toString() + ".jpg";
-                Log.i(TAG, "filename: " + fileName);
-                fileUri = Uri.fromFile(new File(fileName));
-                Log.i(TAG, "fileUri: " + fileUri.getPath());
-
+                fileUri = getOutputImageFile();
                 i.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
                 startActivityForResult(i, REQUEST_PHOTO);
             }
@@ -161,6 +169,48 @@ public class CrimeFragment extends Fragment {
 
         mPhotoView = (ImageView) v.findViewById(R.id.crime_imageView);
         registerForContextMenu(mPhotoView);
+        mPhotoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Photo p = mCrime.getPhoto();
+                if (p == null) {
+                    return;
+                }
+
+                FragmentManager fm = getActivity().getFragmentManager();
+                String path = p.getFilename();
+                ImageFragment.newInstance(path).show(fm, DIALOG_IMAGE);
+            }
+        });
+
+        mSuspectButton = (Button) v.findViewById(R.id.crime_suspectButton);
+        mSuspectButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+                startActivityForResult(i, REQUEST_CONTACT);
+            }
+        });
+
+        if (mCrime.getSuspect() != null) {
+            mSuspectButton.setText(mCrime.getSuspect());
+        }
+
+        mSuspectCall = (ImageButton) v.findViewById(R.id.crime_callButton);
+        mSuspectCall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+                Intent i = new Intent(Intent.ACTION_DIAL);
+//                Uri call = Uri.parse("tel:" + number);
+//                i.setData(call);
+                startActivity(i);
+            }
+        });
+        if (mCrime.getSuspect() == null) {
+            mSuspectCall.setEnabled(false);
+        }
 
         Button reportButton = (Button) v.findViewById(R.id.crime_reportButton);
         reportButton.setOnClickListener(new View.OnClickListener() {
@@ -178,6 +228,27 @@ public class CrimeFragment extends Fragment {
         return v;
     }
 
+    private Uri getOutputImageFile() {
+        File mediaStorageDir = new File(Environment
+                .getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), IMAGE_DIRECTORY_NAME);
+        Log.i(TAG, mediaStorageDir.getPath());
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
+                Log.d(IMAGE_DIRECTORY_NAME, "Oops! Failed create "
+                        + IMAGE_DIRECTORY_NAME + " directory");
+                return null;
+            }
+        }
+
+        String fileName = mediaStorageDir.getPath()
+                + File.separator
+
+                + UUID.randomUUID().toString()
+                + ".jpg";
+        fileName = fileName.replaceAll("-", "_");
+        Uri file = Uri.fromFile(new File(fileName));
+        return file;
+    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -202,16 +273,33 @@ public class CrimeFragment extends Fragment {
             deletePhoto();
 //            String fileName = data.getStringExtra(CrimeCameraFragment.EXTRA_PHOTO_FILENAME);
             //fileName = fileUri.getPath();
-            if (fileName != null) {
-                Log.i(TAG, "filename: " + fileName);
+            if (fileUri != null) {
+                Log.i(TAG, "filename: " + fileUri.getPath());
 
-                Photo p = new Photo(fileName);
+                Photo p = new Photo(fileUri.getPath());
                 mCrime.setPhoto(p);
                 showPhoto();
 
             }
 
 
+        } else if (requestCode == REQUEST_CONTACT) {
+            Uri contactUri = data.getData();
+            String[] queryFields = new String[]{ContactsContract.Contacts.DISPLAY_NAME};
+            Cursor c = getActivity().getContentResolver()
+                    .query(contactUri, queryFields, null, null, null);
+
+            if (c.getCount() == 0) {
+                c.close();
+                return;
+            }
+
+            c.moveToFirst();
+            String suspect = c.getString(0);
+            mCrime.setSuspect(suspect);
+            mSuspectButton.setText(suspect);
+            mSuspectCall.setEnabled(true);
+            c.close();
         }
 
     }
@@ -239,7 +327,7 @@ public class CrimeFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        Log.d(TAG, "onPause()");
+        //Log.d(TAG, "onPause()");
         boolean flag = CrimeLab.get(getActivity()).saveCrimes();
     }
 
@@ -247,17 +335,20 @@ public class CrimeFragment extends Fragment {
         Photo p = mCrime.getPhoto();
         BitmapDrawable b = null;
         if (p != null) {
-            String path = getActivity().getFileStreamPath(p.getFilename()).getAbsolutePath();
+//            String path = getActivity().getFileStreamPath(p.getFilename()).getPath();
+//            String path = fileUri.getPath();
+            String path = p.getFilename();
             b = PictureUtils.getScaledDrawable(getActivity(), path);
         }
         mPhotoView.setImageDrawable(b);
-
     }
 
     private void deletePhoto() {
         Photo p = mCrime.getPhoto();
         if (p != null) {
-            String path = getActivity().getFileStreamPath(p.getFilename()).getAbsolutePath();
+//            String path = getActivity().getFileStreamPath(p.getFilename()).getPath();
+//            String path = fileUri.getPath();
+            String path = p.getFilename();
             File file = new File(path);
             file.delete();
             mCrime.setPhoto(null);
@@ -265,6 +356,7 @@ public class CrimeFragment extends Fragment {
             Log.i(TAG, "deleted file: " + path);
         }
     }
+
 
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
