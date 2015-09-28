@@ -1,4 +1,4 @@
-package com.xmel.criminalintent;
+package com.xmel.nerdlauncher;
 
 
 import android.app.Fragment;
